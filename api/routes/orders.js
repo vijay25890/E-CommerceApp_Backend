@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Order = require("../models/order");
 const Product = require("../models/product");
+const checkAuth = require("../middleware/check_auth");
 
 /*
 Route           /
@@ -11,7 +12,7 @@ Access          PUBLIC
 Parameters      NONE
 Method          GET
 */
-router.get("/", (req, res, next) => {
+router.get("/",checkAuth, (req, res, next) => {
   Order.find()
     .select("product quantity _id")
     .exec()
@@ -41,7 +42,7 @@ Access          PUBLIC
 Parameters      NONE
 Method          GET
 */
-router.post("/", (req, res, next) => {
+router.post("/",checkAuth, (req, res, next) => {
   Product.findById(req.body.productId)
     .then((product) => {
       if (!product) {
@@ -86,7 +87,7 @@ Access          PUBLIC
 Parameters      :orderId
 Method          GET
 */
-router.get("/:orderId", (req, res, next) => {
+router.get("/:orderId",checkAuth, (req, res, next) => {
   Order.findById(req.params.orderId)
     .exec()
     .then((order) => {
@@ -113,7 +114,7 @@ Access          PUBLIC
 Parameters      :orderId
 Method          GET
 */
-router.delete("/:orderId", (req, res, next) => {
+router.delete("/:orderId",checkAuth, (req, res, next) => {
   Order.remove({ _id: req.params.orderId })
     .exec()
     .then((result) => {
