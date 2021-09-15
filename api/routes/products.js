@@ -41,64 +41,43 @@ Access          PUBLIC
 Parameters      NONE
 Method          GET
 */
-
-router.get("/", (req, res, next) => {
-  Product.find()
-    .select("name price _id productImage")
-    .exec()
-    .then((docs) => {
-      const responce = {
-        count: docs.length,
-        products: docs.map((doc) => {
-          return {
-            name: doc.name,
-            price: doc.price,
-            productImage: doc.productImage,
-            _id: doc._id,
-          };
-        }),
-      };
-      res.status(200).json(responce);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json(err);
-    });
+router.get("/", async (req, res, next) => {
+  try {
+    const getAllProducts = await Product.find();
+    return res.status(200).json(getAllProducts);
+  } catch (error) {
+    return res.json(error);
+  }
 });
 
 /*
 Route           /
 Description     add products
-Access          PUBLIC
+Access          PRIVATE
 Parameters      NONE
 Method          POST
 */
-router.post("/",checkAuth, upload.single("productImage"), (req, res, next) => {
-  const product = new Product({
-    _id: new mongoose.Types.ObjectId(),
-    name: req.body.name,
-    price: req.body.price,
-    productImage: req.file.path,
-  });
-  product
-    .save()
-    .then((result) => {
-      console.log(result);
-      res.status(201).json({
-        message: "Created Product Suceesfully",
-        createProduct: {
-          name: result.name,
-          price: result.price,
-          id: result.id,
-        },
+router.post(
+  "/",
+  checkAuth,
+  upload.single("productImage"),
+  async (req, res, next) => {
+    try {
+      const addNewProduct = new Product({
+        _id: new mongoose.Types.ObjectId(),
+        name: req.body.name,
+        price: req.body.price,
+        productImage: req.body.productImage,
       });
-    })
-    .catch((err) => console.log(err));
-  res.status(201).json({
-    message: "Handling POST req to /products",
-    createdProduct: product,
-  });
-});
+      await Product.create(addNewProduct);
+      return res.status(200).json({
+        message: "Created product suceesfully",
+      });
+    } catch (error) {
+      return res.status(501).json(error);
+    }
+  }
+);
 
 /*
 Route           /
@@ -107,78 +86,71 @@ Access          PUBLIC
 Parameters      :productId
 Method          GET
 */
-router.get("/:productId", (req, res, next) => {
-  const id = req.params.productId;
-  Product.findById(id)
-    .select("_id name price productImage")
-    .exec()
-    .then((doc) => {
-      console.log("From database", doc);
-      if (doc) {
-        res.status(200).json({
-          product: doc,
-        });
-      } else {
-        res
-          .status(404)
-          .json({ message: "No valid entry found for provided ID" });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: err });
-    });
+router.get("/:productId", async (req, res, next) => {
+  try {
+    const specificProduct = await Product.findOne({
+      _id: req.params.productId,
+    }).select("name price productImage");
+    if (!specificProduct) {
+      return res.status(500).json({
+        message: `No product found of id ${req.params.productId}`,
+      });
+    }
+    return res.status(200).json(specificProduct);
+  } catch (error) {
+    return res.status(500).json(error);
+  }
 });
 
 /*
 Route           /
 Description     edit product details
-Access          PUBLIC
+Access          PRIVATE
 Parameters      :productId
 Method          PATCH
 */
-router.patch("/:productId",checkAuth, (req, res, next) => {
-  const id = req.params.productId;
-  const updateOps = {};
-  for (const ops of req.body) {
-    updateOps[ops.propName] = ops.value;
+router.patch("/:productId", checkAuth, async (req, res, next) => {
+  try {
+    const updateProduct = await Product.findOneAndUpdate(
+      {
+        _id: req.params.productId,
+      },
+      {
+        $set: {
+          name: req.body.name,
+          price: req.body.price,
+          productImage: req.body.productImage,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(200).json(updateProduct);
+  } catch (error) {
+    res.status(500).json(error);
   }
-  Product.update(
-    { _id: id },
-    {
-      $set: updateOps,
-    }
-  )
-    .exec()
-    .then((result) => {
-      console.log(result);
-      res.status(200).json(result);
-    })
-    .catch((e) => {
-      res.status(500).json(e);
-    });
 });
 
 /*
 Route           /
 Description     delete product
-Access          PUBLIC
+Access          PRIVATE
 Parameters      :productId
 Method          DELETE
 */
-router.delete("/:productId",checkAuth, (req, res, next) => {
-  const id = req.params.productId;
-  Product.remove({ _id: id })
-    .exec()
-    .then((result) => {
-      res.status(200).json(`Product Deleted ${id}`);
-    })
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({
-        error: err,
-      });
+router.delete("/:productId", checkAuth, async (req, res, next) => {
+  try {
+    const deleteProduct = await Product.findOneAndDelete({
+      _id: req.params.productId,
     });
+    res.status(200).json({
+      message: "Product was deleted",
+      product: deleteProduct,
+    });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
 });
 
 module.exports = router;
