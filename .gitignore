@@ -1,8 +1,2 @@
 node_modules/
-/nodemon.json
- nodemon.json/
- nodemon.json
- .nodemon 
- .nodemon.json 
- package-lock.json
- package.json
+*.json
