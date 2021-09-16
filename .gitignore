@@ -4,3 +4,5 @@ node_modules/
  nodemon.json
  .nodemon 
  .nodemon.json 
+ package-lock.json
+ package.json
