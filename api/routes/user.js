@@ -64,6 +64,20 @@ router.post("/login", async (req, res, next) => {
 });
 
 /*
+Route           /logout
+Description     logout user
+Access          PUBLIC
+Parameter       NONE
+Methods         POST
+*/
+router.post("/logout", async (req, res, next) => {
+  const useLogout = res.clearCookie("token");
+  res.json({
+    message: "Logout user sucessfully",
+  });
+});
+
+/*
 Route           /
 Description     delete user
 Access          PUBLIC
